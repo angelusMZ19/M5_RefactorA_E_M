@@ -10,20 +10,21 @@ import com.directi.training.codesmells.smelly.pieces.Piece;
 
 public class ChessBoard
 {
+    private static final int BOARD_SIZE = 8;
     private final Cell[][] _board;
-    public boolean _kingDead;
-    public Player player1, player2;
+    private boolean _kingDead;
+    private Player player1, player2;
 
     public ChessBoard()
     {
-        _board = new Cell[8][8];
+        _board = new Cell[BOARD_SIZE][BOARD_SIZE];
         initBoard();
     }
 
     private void initBoard()
     {
-        for (int row = 0; row < 8; row++) {
-            for (int column = 0; column < 8; column++) {
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int column = 0; column < BOARD_SIZE; column++) {
                 Color color = ((row + column) % 2 == 0) ? Color.WHITE : Color.BLACK;
                 _board[row][column] = new Cell(color);
             }
@@ -38,9 +39,9 @@ public class ChessBoard
     private boolean isPositionOutOfBounds(Position position)
     {
         return (position.getRow() < 0
-                || position.getRow() >= 8
+                || position.getRow() >= BOARD_SIZE
                 || position.getColumn() < 0
-                || position.getColumn() >= 8);
+                || position.getColumn() >= BOARD_SIZE);
     }
 
     public boolean isEmpty(Position position)
@@ -82,15 +83,24 @@ public class ChessBoard
 
     public boolean isValidMove(int fromRow, int fromColumn, int toRow, int toColumn)
     {
-        Position from = new Position(fromRow, fromColumn);
-        Position to = new Position(toRow, toColumn);
+        Position from = createPosition(fromRow, fromColumn);
+        Position to = createPosition(toRow, toColumn);
         return !from.equals(to)
-               && !(isPositionOutOfBounds(from) || isPositionOutOfBounds(to))
+               && !isPositionOutOfBounds(from)
+               && !isPositionOutOfBounds(to)
                && !isEmpty(from)
-               && (isEmpty(to) || getPiece(from).getColor() != getPiece(to).getColor())
+               && isDestinationValid(from, to)
                && getPiece(from).isValidMove(from, to)
                && hasNoPieceInPath(from, to)
                && (!(getPiece(from) instanceof Pawn) || isValidPawnMove(from, to));
+    }
+
+    private Position createPosition(int row, int column) {
+        return new Position(row, column);
+    }
+
+    private boolean isDestinationValid(Position from, Position to) {
+        return isEmpty(to) || getPiece(from).getColor() != getPiece(to).getColor();
     }
 
     private boolean hasNoPieceInPath(Position from, Position to)
@@ -128,8 +138,8 @@ public class ChessBoard
 
     public void movePiece(int fromRow, int fromColumn, int toRow, int toColumn)
     {
-        Position from = new Position(fromRow, fromColumn);
-        Position to = new Position(toRow, toColumn);
+        Position from = createPosition(fromRow, fromColumn);
+        Position to = createPosition(toRow, toColumn);
         updateIsKingDead(toRow, toColumn);
         if (!getCell(to).isEmpty())
             getCell(to).removePiece();
@@ -139,7 +149,7 @@ public class ChessBoard
 
     private void updateIsKingDead(int row, int column)
     {
-        if (getPiece(new Position(row, column)) instanceof King) {
+        if (getPiece(createPosition(row, column)) instanceof King) {
             _kingDead = true;
         }
     }
@@ -150,8 +160,8 @@ public class ChessBoard
         Pawn pawn = (Pawn)getPiece(from);
         Color pawnColor = pawn.getColor();
         int forwardRow = from.getRow() + ((pawnColor == Color.BLACK) ? 1 : -1);
-        Position forwardLeft = new Position(forwardRow, from.getColumn() + (pawnColor == Color.WHITE ? -1 : 1));
-        Position forwardRight = new Position(forwardRow, from.getColumn() + (pawnColor == Color.WHITE ? 1 : -1));
+        Position forwardLeft = createPosition(forwardRow, from.getColumn() + (pawnColor == Color.WHITE ? -1 : 1));
+        Position forwardRight = createPosition(forwardRow, from.getColumn() + (pawnColor == Color.WHITE ? 1 : -1));
 
         boolean opponentPieceAtForwardLeft = !isEmpty(forwardLeft) && getPiece(forwardLeft).getColor() != pawnColor;
         boolean opponentPieceAtForwardRight = !isEmpty(forwardRight) && getPiece(forwardRight).getColor() != pawnColor;
@@ -169,16 +179,16 @@ public class ChessBoard
     public String toString()
     {
         StringBuilder stringBuilder = new StringBuilder(" ");
-        for (int column = 0; column < 8; column++) {
+        for (int column = 0; column < BOARD_SIZE; column++) {
             stringBuilder.append("  ")
                     .append(column + 1)
                     .append("  ");
         }
         stringBuilder.append("\n");
 
-        for (int row = 0; row < 8; row++) {
+        for (int row = 0; row < BOARD_SIZE; row++) {
             stringBuilder.append(row + 1);
-            for (int column = 0; column < 8; column++) {
+            for (int column = 0; column < BOARD_SIZE; column++) {
                 stringBuilder.append(" ")
                         .append(_board[row][column])
                         .append(" ");
